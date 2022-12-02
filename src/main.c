@@ -2,6 +2,7 @@
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
 #include "hardware/gpio.h"
+#include "hardware/adc.h"
 
 #define PIN_D0 18           //Ausgangspin für PWM
 #define PIN_BUTTON 15       //Sensorpin für den Button
@@ -12,12 +13,17 @@ volatile uint16_t TimerCount = 0;
 volatile uint16_t PotiRead = 0;
 volatile bool ButtonPressed = false;
 
-bool reapting_timer_callback(struct reapeating_timer *t)
+long map(long x, long in_min, long in_max, long out_min, long out_max)
+{
+    return (x - in_min) * (out_max - out_min)/ (in_max - in_min) + out_min;
+}
+
+bool repeating_timer_callback(struct repeating_timer *t)
 {
     //wenn der Timer 0 ist soll PWM 1 sein
     if(TimerCount == 0) 
     {
-        gipo_put(PIN_D0, 1);
+        gpio_put(PIN_D0, 1);
     }
 
     //wenn der Timer gleich 1 ms + die PotiReadZeit erreicht hat soll PWM 0 sein
@@ -61,7 +67,7 @@ int main(void)
     gpio_set_dir(PIN_BUTTON, GPIO_IN);
 
     struct repeating_timer timer;
-    add_reapating_timer_us(INTERRUPT_TIME, reapting_timer_callback, NULL, &timer);
+    add_repeating_timer_us(INTERRUPT_TIME, repeating_timer_callback, NULL, &timer);
     
     while(1)
     {
