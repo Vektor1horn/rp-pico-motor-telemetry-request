@@ -15,7 +15,7 @@ volatile bool ButtonPressed = false;
 
 long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
-    return (x - in_min) * (out_max - out_min)/ (in_max - in_min) + out_min;
+    return (x - in_min) * (out_max - out_min)/(in_max - in_min) + out_min;
 }
 
 bool repeating_timer_callback(struct repeating_timer *t)
@@ -65,6 +65,9 @@ int main(void)
     gpio_init(PIN_BUTTON);
     gpio_set_dir(PIN_D0, GPIO_OUT);
     gpio_set_dir(PIN_BUTTON, GPIO_IN);
+    adc_init();
+    adc_gpio_init(26);
+    adc_select_input(0);
 
     struct repeating_timer timer;
     add_repeating_timer_us(INTERRUPT_TIME, repeating_timer_callback, NULL, &timer);
