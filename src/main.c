@@ -10,23 +10,22 @@
 
 #define PIN_BUTTON 15       //Sensorpin für den Button
 #define PWM_PIN 18          //PWM Pin
-#define PEAK_PIN 19
-#define READ_PIN 20
-#define INTERRUPT_TIME 10 
-#define ALARM_TIMER 3
+#define PEAK_PIN 16         //test Pin um Peak asz tz lesen
+#define INTERRUPT_TIME 250  //in ms
+
+#define BLOCK_TIME 3000     //in us
+#define PEAK_TIME 100       //in us
 
 
 
 
 volatile uint16_t PotiRead = 0;
-//volatile bool ButtonPressed = false;
 
+//forward Definitionen
 void set_pwm_pin(uint pin, uint freq, uint duty_c);
-void repeating_timer_callback(struct repeating_timer *t);
+bool repeating_timer_callback(struct repeating_timer *t);
 uint64_t alarm_callback(alarm_id_t id, void *user_data);
 void sendPeak();
-
-//Map nimmt einen Wert in einer Range und findet den dazu passenden Wert in einer neuen Range
 long map(long x, long in_min, long in_max, long out_min, long out_max);
 
 
@@ -37,7 +36,7 @@ int main(void)
     gpio_init(PIN_BUTTON);
     gpio_set_dir(PIN_BUTTON, GPIO_IN);
     gpio_init(PEAK_PIN);
-    gpio_set_dir(PEAK_PIN, GPIO_IN);
+    gpio_set_dir(PEAK_PIN, GPIO_OUT);
 
     adc_init();
     adc_gpio_init(26);
@@ -61,6 +60,7 @@ int main(void)
     }
 }
 
+
 void set_pwm_pin(uint pin, uint freq, uint duty_c) // duty_c between 0..10000
 { 
     gpio_set_function(pin, GPIO_FUNC_PWM);
@@ -73,23 +73,26 @@ void set_pwm_pin(uint pin, uint freq, uint duty_c) // duty_c between 0..10000
     pwm_set_gpio_level(pin, duty_c); //connect the pin to the pwm engine and set the on/off level. 
 }
 
+//Map nimmt einen Wert in einer Range und findet den dazu passenden Wert in einer neuen Range
 long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
     return (x - in_min) * (out_max - out_min)/ (in_max - in_min) + out_min;
 }
 
-void repeating_timer_callback(struct repeating_timer *t)
-{
-
-    if(gpio_get(READ_PIN) != 0){
-    
-       //add_alarm_in_ms(ALARM_TIMER, alarm_callback, NULL,false);
-       printf("mist");
+bool repeating_timer_callback(struct repeating_timer *t)
+{       
+    if(gpio_get(PWM_PIN) == 1)
+    {
+        printf("blocked\n");
+        int time = micros();
+        while (micros() <= time + BLOCK_TIME)
+        {
+            /* pass */
+        }
     }
-    else{
 
-        sendPeak();
-    }
+    sendPeak();
+    return true;
   
 }
 
@@ -98,13 +101,20 @@ uint64_t alarm_callback(alarm_id_t id, void *user_data){
     return 0;
 }
 
+//
 void sendPeak(){
     
     
-    gpio_put(PEAK_PIN, 1);
-    sleep_us(100);
-    gpio_put(PEAK_PIN, 0);
-    printf("jawoll");
+    gpio_put(PWM_PIN, 1);
+    int time = micros();
+    
+    while(micros() <= time + PEAK_TIME )
+    {
+        /* pass */
+    }
+    
+    gpio_put(PWM_PIN, 0);
+    //printf("jawoll\n");
     
 
 }
