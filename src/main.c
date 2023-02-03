@@ -43,7 +43,9 @@ void calculate_values(uint8_t *buff, uint8_t *data)
 }
 
 void on_uart_rx() {
+    printf("Interrupted!\n");
     while (uart_is_readable(UART_ID)) {
+        printf("Char received!\n");
         buff[i] = uart_getc(UART_ID);
         i++;
     }
