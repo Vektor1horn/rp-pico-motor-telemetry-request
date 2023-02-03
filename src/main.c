@@ -56,7 +56,7 @@ int main()
     gpio_set_function(0,GPIO_FUNC_UART);
     gpio_set_function(1,GPIO_FUNC_UART);
     uart_set_hw_flow(UART_ID, false, false);
-    uart_set_fifo_enabled(UART_ID, false);
+    uart_set_fifo_enabled(UART_ID, true);
 
     uint8_t values[6];
     uint8_t crc_output;
