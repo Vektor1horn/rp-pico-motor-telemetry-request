@@ -11,10 +11,10 @@
 #define PIN_BUTTON 15       //Sensorpin für den Button
 #define PWM_PIN 18          //PWM Pin
 #define PEAK_PIN 16         //test Pin um Peak asz tz lesen
-#define INTERRUPT_TIME 250  //in ms
+#define INTERRUPT_TIME 10  //in ms
 
 #define BLOCK_TIME 3000     //in us
-#define PEAK_TIME 100       //in us
+#define PEAK_TIME 30       //in us
 
 
 
@@ -105,7 +105,7 @@ uint64_t alarm_callback(alarm_id_t id, void *user_data){
 void sendPeak(){
     
     
-    gpio_put(PWM_PIN, 1);
+    gpio_put(PEAK_PIN, 1);
     int time = micros();
     
     while(micros() <= time + PEAK_TIME )
@@ -113,7 +113,7 @@ void sendPeak(){
         /* pass */
     }
     
-    gpio_put(PWM_PIN, 0);
+    gpio_put(PEAK_PIN, 0);
     //printf("jawoll\n");
     
 
