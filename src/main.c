@@ -9,9 +9,6 @@
 #define BAUDRATE 115200
 #define READ_LENGTH 10
 #define UART_ID uart0
-#define BAUDRATE 115200
-#define READ_LENGTH 10
-#define UART_ID uart0
 
 
 //forward definition
@@ -50,7 +47,7 @@ int main()
     gpio_set_function(1,GPIO_FUNC_UART);
 
     uint8_t buff[READ_LENGTH];
-    uint8_t values[6];
+    uint16_t values[6];
     uint8_t crc_output;
     uint8_t i = 0;
 
@@ -79,7 +76,7 @@ int main()
             {
                 i = 0;
                 calculate_values(buff, values);
-            printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);
+            printf("%d °C, %f V, %f A, %f mAh, %f Rpm, CRC8: %d\n", values[0], (float)values[1]/100, (float)values[2]/100,(float)values[3], (float)values[4]*100/12,values[5]);
             }
 
             /* for(int i = 0; i < READ_LENGTH; ++i)
