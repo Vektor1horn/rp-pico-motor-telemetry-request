@@ -1,86 +1,59 @@
 #include <stdio.h>
+#include <stdint.h>
 #include "pico/stdlib.h"
-#include "hardware/timer.h"
+//#include "hardware/timer.h"
 #include "hardware/gpio.h"
-#include "hardware/adc.h"
+#include "hardware/uart.h"
+//#include "hardware/adc.h"
 
-#define PIN_D0 18           //Ausgangspin für PWM
-#define PIN_BUTTON 15       //Sensorpin für den Button
-#define INTERRUPT_TIME 15   //Anzahl der us nachdem der Timer erneut aufgerufen werden soll
+#define BAUDRATE 115200
+#define READ_LENGTH 10
+#define UART_ID uart0
 
-//volatile uint16_t TimerReset = 0;
-volatile uint16_t TimerCount = 0;
-volatile uint16_t PotiRead = 0;
-volatile bool ButtonPressed = false;
-
-long map(long x, long in_min, long in_max, long out_min, long out_max)
-{
-    return (x - in_min) * (out_max - out_min)/(in_max - in_min) + out_min;
+//forward definition
+uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
+{ 
+    uint8_t crc_u, i; crc_u = crc; crc_u ^= crc_seed; 
+    for ( i=0; i<8; i++) crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 ); return (crc_u);
 }
 
-bool repeating_timer_callback(struct repeating_timer *t)
-{
-    //wenn der Timer 0 ist soll PWM 1 sein
-    if(TimerCount == 0) 
-    {
-        gpio_put(PIN_D0, 1);
-    }
-
-    //wenn der Timer gleich 1 ms + die PotiReadZeit erreicht hat soll PWM 0 sein
-    if(TimerCount == PotiRead*(1000/INTERRUPT_TIME)) 
-    {
-        gpio_put(PIN_D0, 0);
-    }
-
-    //erhöht den Timer Count um 1
-    TimerCount++; //erhöht den Timer Count um 1
-
-    //Wenn 10 ms erreicht sind soll PWM wieder von vorne anfangen --> TimerCount 0
-    if(TimerCount >= 10000/INTERRUPT_TIME) 
-    {
-        TimerCount = 0;
-    }
-
-    //wenn Knopf gedrückt und in der Mitte des PWM Intervalls 
-    if(gpio_get(PIN_BUTTON) == 1 && TimerCount == (int) 5000/INTERRUPT_TIME && ButtonPressed == false)
-    {
-        gpio_put(PIN_D0,1);
-        ButtonPressed = true;
-    
-    }
-
-    if(TimerCount == 2 + (int)5000/INTERRUPT_TIME)
-    {
-        gpio_put(PIN_D0, 0);
-    }
-   
-
-    return true;
+uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
+{ 
+    uint8_t crc = 0, i; 
+    for( i=0; i<BufLen; i++) crc = update_crc8(Buf[i], crc); 
+    return (crc);
 }
 
-int main(void)
-{  
+
+int main()
+{
     stdio_init_all();
-    gpio_init(PIN_D0);
-    gpio_init(PIN_BUTTON);
-    gpio_set_dir(PIN_D0, GPIO_OUT);
-    gpio_set_dir(PIN_BUTTON, GPIO_IN);
-    adc_init();
-    adc_gpio_init(26);
-    adc_select_input(0);
+    uart_init(UART_ID, BAUDRATE);
+    gpio_set_function(0,GPIO_FUNC_UART);
+    gpio_set_function(1,GPIO_FUNC_UART);
 
-    struct repeating_timer timer;
-    add_repeating_timer_us(INTERRUPT_TIME, repeating_timer_callback, NULL, &timer);
-    
-    while(1)
+    uint8_t buff[READ_LENGTH];
+    uint8_t crc_output;
+
+    while (uart_is_enabled(UART_ID) == false){
+
+    }
+
+    while (1)
     {
-        
-        // alle Funktionen die auserhalb des Timer gemacht werden sollen
-        PotiRead = adc_read();                                      //Potentiometer wird ausgelesen 
-        PotiRead = map(PotiRead, 0, 4096, 1000, 2000);              //Potentiometerdaten werden auf zwischen 1000 und 2000 gelegt
-        if(ButtonPressed == true && gpio_get(PIN_BUTTON) == 0)      
+        if(uart_is_readable(UART_ID) == READ_LENGTH)
         {
-            ButtonPressed = false;
+            uart_read_blocking(UART_ID, buff, READ_LENGTH);
+            crc_output = get_crc8(buff, READ_LENGTH);
+
+            for(int i = 0; i < READ_LENGTH; ++i)
+            {
+                pico_printf("%d, ", i);
+            }
+
+            pico_printf(" CRC8 Auswertung ist %d\n", crc_output);
         }
     }
+    
+
 }
