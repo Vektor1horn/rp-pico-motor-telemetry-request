@@ -52,6 +52,7 @@ int main()
     uint8_t buff[READ_LENGTH];
     uint8_t values[6];
     uint8_t crc_output;
+    uint8_t i = 0;
 
     while (uart_is_enabled(UART_ID) == false){
         //printf("Uart is enabled: %d\n", uart_is_enabled(UART_ID));
@@ -63,16 +64,32 @@ int main()
         //printf("Uart is readable: %d\n", uart_is_readable(UART_ID));
         if(uart_is_readable(UART_ID))
         {
-            uart_read_blocking(UART_ID, buff, READ_LENGTH);
-            
+            //uart_read_blocking(UART_ID, buff, READ_LENGTH);
 
-            for(int i = 0; i < READ_LENGTH; ++i)
+            /* for(int i = 0; i < READ_LENGTH -1; ++i)
+            {
+                buff[i] = buff[i+1];
+            }
+
+            buff[READ_LENGTH] = uart_getc(UART_ID); */
+
+            buff[i] = uart_getc(UART_ID);
+            ++i;
+            if(i>9)
+            {
+                i = 0;
+                calculate_values(buff, values);
+            printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);
+            }
+
+            /* for(int i = 0; i < READ_LENGTH; ++i)
             {
                 printf("%d, ", buff[i]);
-            }
-            calculate_values(buff, values);
+            } */
+
+            /* calculate_values(buff, values);
             printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);
-            
+             */
            
         }
     }
