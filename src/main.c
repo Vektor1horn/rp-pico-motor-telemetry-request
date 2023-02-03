@@ -25,19 +25,17 @@ uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
     return (crc);
 }
 
-
-void calculate_values(uint8_t *buff, uint8_t *data)
+void calculate_values(uint8_t *buff, uint16_t *values)
 { 
-    data[0] = buff[0];
-
+    //Temperatur wird als erster Wert direkt gespeichert, es wird keine Umrechnung benötigt
+    values[0] = buff[0];
+    //In der For Schleife werden immer zwei Byte zu einer 16 bit Zahl kombiniert und in Values gespeichert
     for (int i = 1; i < 5; i++) {
-        data[i] = (buff[i * 2] << 8 | buff[(i * 2) + 1]); 
+        values[i] = (buff[(i * 2)-1] << 8 | buff[(i * 2)]); 
         }
-
-    data[5] = get_crc8(buff, READ_LENGTH);
+    //CRC8 wird als letzter Wert gespeichert: = heißt erfolgreich
+    values[5] = get_crc8(buff, READ_LENGTH);    
 }
-
-
 
 int main()
 {
@@ -48,51 +46,34 @@ int main()
 
     uint8_t buff[READ_LENGTH];
     uint16_t values[6];
-    uint8_t crc_output;
     uint8_t i = 0;
 
     while (uart_is_enabled(UART_ID) == false){
-        //printf("Uart is enabled: %d\n", uart_is_enabled(UART_ID));
+        
     }
 
+    uart_set_fifo_enabled(UART_ID, true);  
+    
     while (1)
     {
-
-        //printf("Uart is readable: %d\n", uart_is_readable(UART_ID));
         if(uart_is_readable(UART_ID))
-        {
-            //uart_read_blocking(UART_ID, buff, READ_LENGTH);
+        {   
+        
+            uart_read_blocking(UART_ID, buff, READ_LENGTH);
+            uart_set_fifo_enabled(UART_ID, false);
+             
 
-            /* for(int i = 0; i < READ_LENGTH -1; ++i)
-            {
-                buff[i] = buff[i+1];
-            }
-
-            buff[READ_LENGTH] = uart_getc(UART_ID); */
-
-            buff[i] = uart_getc(UART_ID);
-            ++i;
-            if(i>9)
-            {
-                i = 0;
-                calculate_values(buff, values);
-            printf("%d °C, %f V, %f A, %f mAh, %f Rpm, CRC8: %d\n", values[0], (float)values[1]/100, (float)values[2]/100,(float)values[3], (float)values[4]*100/12,values[5]);
-            }
-
-            /* for(int i = 0; i < READ_LENGTH; ++i)
-            {
-                printf("%d, ", buff[i]);
-            } */
-
-            /* calculate_values(buff, values);
-            printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);
-             */
+            
+            calculate_values(&buff, &values);
            
+            printf("%d °C, %.2f V, %.2f A, %d mAh, %.2f Rpm, CRC8: %d", values[0],(float)values[1]/100, (float)values[2]/100, values[3], (float)values[4]*100/12, values[5]);
+             if(values[5] != 0){
+                printf(" | Data corrupted: ");
+                for(int i = 0; i < READ_LENGTH; ++i)
+                    printf("%d, ", buff[i]); 
+            }
+            printf("\n");
+            uart_set_fifo_enabled(UART_ID, true);      
         }
     }
-   
-    
-
-    
-
 }
