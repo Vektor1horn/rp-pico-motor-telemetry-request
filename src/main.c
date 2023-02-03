@@ -9,6 +9,10 @@
 #define BAUDRATE 115200
 #define READ_LENGTH 10
 #define UART_ID uart0
+#define BAUDRATE 115200
+#define READ_LENGTH 10
+#define UART_ID uart0
+
 
 //forward definition
 uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
@@ -24,6 +28,7 @@ uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
     return (crc);
 }
 
+
 void calculate_values(uint8_t *buff, uint8_t *data)
 { 
     data[0] = buff[0];
@@ -34,6 +39,7 @@ void calculate_values(uint8_t *buff, uint8_t *data)
 
     data[5] = getcrc8(buff, READ_LENGTH);
 }
+
 
 
 int main()
@@ -53,6 +59,7 @@ int main()
 
     while (1)
     {
+
         //printf("Uart is readable: %d\n", uart_is_readable(UART_ID));
         if(uart_is_readable(UART_ID))
         {
@@ -64,9 +71,14 @@ int main()
                 printf("%d, ", buff[i]);
             }
             calculate_values(buff, values);
-            printf(" CRC8 Auswertung ist %d\n", crc_output);
+            printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);
+            
+           
         }
     }
+   
+    
+
     
 
 }
