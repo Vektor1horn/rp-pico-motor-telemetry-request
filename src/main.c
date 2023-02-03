@@ -13,6 +13,8 @@
 #define READ_LENGTH 10
 #define UART_ID uart0
 
+volatile int i = 0;
+volatile buff[READ_LENGTH];
 
 //forward definition
 uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
@@ -40,7 +42,12 @@ void calculate_values(uint8_t *buff, uint8_t *data)
     data[5] = getcrc8(buff, READ_LENGTH);
 }
 
-
+void on_uart_rx() {
+    while (uart_is_readable(UART_ID)) {
+        buff[i] = uart_getc(UART_ID);
+        i++;
+    }
+}
 
 int main()
 {
@@ -48,10 +55,19 @@ int main()
     uart_init(UART_ID, BAUDRATE);
     gpio_set_function(0,GPIO_FUNC_UART);
     gpio_set_function(1,GPIO_FUNC_UART);
+    uart_set_hw_flow(UART_ID, false, false);
+    uart_set_fifo_enabled(UART_ID, false);
 
-    uint8_t buff[READ_LENGTH];
     uint8_t values[6];
     uint8_t crc_output;
+    int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
+
+    // And set up and enable the interrupt handlers
+    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+    irq_set_enabled(UART_IRQ, true);
+
+    // Now enable the UART to send interrupts - RX only
+    uart_set_irq_enables(UART_ID, true, false);
 
     while (uart_is_enabled(UART_ID) == false){
         //printf("Uart is enabled: %d\n", uart_is_enabled(UART_ID));
@@ -59,26 +75,13 @@ int main()
 
     while (1)
     {
-
-        //printf("Uart is readable: %d\n", uart_is_readable(UART_ID));
-        if(uart_is_readable(UART_ID))
-        {
-            uart_read_blocking(UART_ID, buff, READ_LENGTH);
-            
-
-            for(int i = 0; i < READ_LENGTH; ++i)
-            {
+        if (i>9){
+            for(int j = 0; j< READ_LENGTH-1;i++)
                 printf("%d, ", buff[i]);
-            }
+            printf("\n");
             calculate_values(buff, values);
-            printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);
-            
-           
-        }
+            printf("%d °C, %d V, %d A, %d mAh, %d Rpm, CRC8: %d\n", values[0],values[1]/100,values[2]/100,values[3],values[4]*100/12,values[5]);   
+            i = 0;
+        }    
     }
-   
-    
-
-    
-
 }
