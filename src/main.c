@@ -37,7 +37,7 @@ void calculate_values(uint8_t *buff, uint8_t *data)
         data[i] = (buff[i * 2] << 8 | buff[(i * 2) + 1]); 
         }
 
-    data[5] = getcrc8(buff, READ_LENGTH);
+    data[5] = get_crc8(buff, READ_LENGTH);
 }
 
 
