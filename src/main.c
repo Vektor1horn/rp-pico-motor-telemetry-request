@@ -24,6 +24,17 @@ uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
     return (crc);
 }
 
+void calculate_values(uint8_t *Buf, uint8_t *data)
+{ 
+    data[0] = Buf[0];
+
+    for (int i = 1; i < 5; i++) {
+        data[i] = (Buf[i * 2] << 8 | Buf[(i * 2) + 1]); 
+        }
+        
+    data[5] = getcrc8(Buf, READ_LENGTH);
+}
+
 
 int main()
 {
@@ -33,25 +44,27 @@ int main()
     gpio_set_function(1,GPIO_FUNC_UART);
 
     uint8_t buff[READ_LENGTH];
+    uint8_t values[6];
     uint8_t crc_output;
 
     while (uart_is_enabled(UART_ID) == false){
-
+        //printf("Uart is enabled: %d\n", uart_is_enabled(UART_ID));
     }
 
     while (1)
     {
-        if(uart_is_readable(UART_ID) == READ_LENGTH)
+        //printf("Uart is readable: %d\n", uart_is_readable(UART_ID));
+        if(uart_is_readable(UART_ID))
         {
             uart_read_blocking(UART_ID, buff, READ_LENGTH);
             crc_output = get_crc8(buff, READ_LENGTH);
 
             for(int i = 0; i < READ_LENGTH; ++i)
             {
-                pico_printf("%d, ", i);
+                printf("%d, ", buff[i]);
             }
-
-            pico_printf(" CRC8 Auswertung ist %d\n", crc_output);
+            calculate_values(buff, values);
+            printf(" CRC8 Auswertung ist %d\n", crc_output);
         }
     }
     
