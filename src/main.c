@@ -5,10 +5,14 @@
 #include "hardware/gpio.h"
 #include "hardware/uart.h"
 //#include "hardware/adc.h"
+#include "pico/multicore.h"
+ 
 
 #define BAUDRATE 115200
 #define READ_LENGTH 10
 #define UART_ID uart0
+
+#define FLAG_VALUE 123
 
 
 //forward definition
@@ -37,8 +41,18 @@ void calculate_values(uint8_t *buff, uint16_t *values)
     values[5] = get_crc8(buff, READ_LENGTH);    
 }
 
-int main()
-{
+
+void core1_entry() {
+ 
+    multicore_fifo_push_blocking(FLAG_VALUE);
+ 
+    uint32_t g = multicore_fifo_pop_blocking();
+ 
+    if (g != FLAG_VALUE)
+        printf("Hmm, that's not right on core 1!\n");
+    else
+        printf("Its all gone well on core 1!");
+ 
     stdio_init_all();
     uart_init(UART_ID, BAUDRATE);
     gpio_set_function(0,GPIO_FUNC_UART);
@@ -75,5 +89,16 @@ int main()
             printf("\n");
             uart_set_fifo_enabled(UART_ID, true);      
         }
+    }
+        
+}
+
+int main()
+{
+     
+    
+    while (1)
+    {
+        tight_loop_contents();
     }
 }
