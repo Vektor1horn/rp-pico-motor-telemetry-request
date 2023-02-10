@@ -53,11 +53,7 @@ void core1_entry() {
     else
         printf("Its all gone well on core 1!");
  
-    stdio_init_all();
-    uart_init(UART_ID, BAUDRATE);
-    gpio_set_function(0,GPIO_FUNC_UART);
-    gpio_set_function(1,GPIO_FUNC_UART);
-
+    
     uint8_t buff[READ_LENGTH];
     uint16_t values[6];
     uint8_t i = 0;
@@ -95,7 +91,22 @@ void core1_entry() {
 
 int main()
 {
-     
+    stdio_init_all();
+    uart_init(UART_ID, BAUDRATE);
+    gpio_set_function(0,GPIO_FUNC_UART);
+    gpio_set_function(1,GPIO_FUNC_UART); 
+    multicore_launch_core1(core1_entry);
+
+    // Wait for it to start up
+ 
+    uint32_t g = multicore_fifo_pop_blocking();
+ 
+    if (g != FLAG_VALUE)
+        printf("Hmm, that's not right on core 0!\n");
+    else {
+        multicore_fifo_push_blocking(FLAG_VALUE);
+        printf("It's all gone well on core 0!");
+    }
     
     while (1)
     {
