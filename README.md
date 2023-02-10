@@ -20,9 +20,9 @@ This is a project where the Raspberry Pi Pico is used to read the telemetry data
 * The data can be read out via a serial monitor with a baud rate of 115200.
 
 Translated with www.DeepL.com/Translator (free version)
-
-
-
+ 
+ 
+ 
 German:
 ## Raspberry Pi Pico --> KISS ESC-32bit Ansteuerung/Auslesen
 
