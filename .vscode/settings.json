@@ -1,5 +1,6 @@
 {
     "files.associations": {
         "adc.h": "c"
+        "pwm.h": "c"
     }
 }
