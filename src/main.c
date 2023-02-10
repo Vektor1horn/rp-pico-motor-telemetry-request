@@ -19,157 +19,155 @@
 #include "hardware/clocks.h"
 #include "hardware/uart.h"
 
-#define PWM_PIN 18          //PWM Pin
-#define PEAK_PIN 16         //Pin um Peak zu senden
-#define INTERRUPT_TIME 10   //in ms
-#define BLOCK_TIME 3000     //in us
-#define PEAK_TIME 30        //in us
-#define BAUDRATE 115200     //Kommunikationsgeschwindigkeit über USB
-#define READ_LENGTH 10      //Anzahl der Bytes die vom ESC ausgegeben werden
-#define UART_ID uart0       //genutzte UART Schnittstelle
-#define FLAG_VALUE 123      //Ausgabe wenn 2ter Code richtig gestartet ist
+#define PWM_PIN 18          // PWM pin
+#define PEAK_PIN 16         // Pin to send kea
+#define INTERRUPT_TIME 10   // in ms
+#define BLOCK_TIME 3000     // in us
+#define PEAK_TIME 30        // in us
+#define BAUDRATE 115200     // communicationspeed via USB
+#define READ_LENGTH 10      // number of Bytes returned by the ESC 
+#define UART_ID uart0       // used UART interface
 
 
-//forward Definition für setzen des PWM Signals und des Peaks
+// forward definition to crate PWM and peak
 long map(long x, long in_min, long in_max, long out_min, long out_max);
 void set_pwm_pin(uint pin, uint freq, uint duty_c);
 bool repeating_timer_callback(struct repeating_timer *t);
 void sendPeak();
 
-//forward Definition um Daten auszulesen
+// forward definition to read data
 uint8_t update_crc8(uint8_t crc, uint8_t crc_seed);
 uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen);
 void calculate_values(uint8_t *buff, uint16_t *values);
 void core1_entry();
 
 
-volatile uint16_t PotiRead = 0; //Variable um den eingelesenen Poti Wert zu verwenden
+volatile uint16_t PotiRead = 0; // variables to save poti inread
 
-
-//Start des Porgramms
-//Porgramm das auf 1ten Core läuft
-//Inizialister alles
-//Setzt das PWM Signals, Setzt den Peak (mit hardware_timer)
+// start of the programm
+// inizialize
+// programm running on core0
+// creating/manupulating PWM and peak (mit hardware_timer)
 int main(void)
 {  
     
-    stdio_init_all();                       //Inizialiserung aller Kommunikation mit dem PC
-    gpio_init(PEAK_PIN);                    //Inizialiserung des Pins auf dem der Peak ausgesendet wird
-    gpio_set_dir(PEAK_PIN, GPIO_OUT);       //setzten des Peak Pins als Output
+    stdio_init_all();                       // inizialize communitaion with PC
+    gpio_init(PEAK_PIN);                    // inizialize peak PIN
+    gpio_set_dir(PEAK_PIN, GPIO_OUT);       // set peak PIN as output
 
-    adc_init();                             //Inizialiserung des analogen Einlesens
-    adc_gpio_init(26);                      //Inizialiserung auf Pin 26 (geht nur auf PIn 26, 27 und 28)
-    adc_select_input(0);                    //Wählt des ADC_Pin 0 --> entspircht GPIO_Pin 26
-    set_pwm_pin(PWM_PIN,100,1000);          //Inizialiserung des PWM Pins mit 100 Hz und 1ms High Time
+    adc_init();                             // inizialize analaog read in
+    adc_gpio_init(26);                      // inizialize PIN 26 (ADC0 Pin)
+    adc_select_input(0);                    // select ADC0 as input
+    set_pwm_pin(PWM_PIN,100,1000);          // inizialize PWM PIN with 100 Hz and 1ms high time
 
-    uart_init(UART_ID, BAUDRATE);           //Inizialiserung von UART mit der uart0 Schnittstelle des PI
-    gpio_set_function(0,GPIO_FUNC_UART);    //setzen der UART Kommunikations Pins für UART
+    uart_init(UART_ID, BAUDRATE);           // inizialize UART with uart0 interface
+    gpio_set_function(0,GPIO_FUNC_UART);    // setting UART communications PINs
     gpio_set_function(1,GPIO_FUNC_UART); 
-    multicore_launch_core1(core1_entry);    //Starten des 2ten Cores mit dem Programm core1_entry
+    multicore_launch_core1(core1_entry);    // start of core1 running function core1_entry()
 
-    //inizialisierung des Timers
+    // inizialize timer
     struct repeating_timer timer;
     add_repeating_timer_ms(INTERRUPT_TIME, repeating_timer_callback, NULL, &timer); 
     
     while (1)
     {
         
-        // alle Funktionen die auserhalb des Timer gemacht werden sollen
-        PotiRead = adc_read();                              //Potentiometer wird ausgelesen 
-        PotiRead = map(PotiRead, 0, 4096, 1000, 2000);      //Potentiometerdaten werden auf zwischen 1000 und 2000 gelegt
+        // all functions done outside the timer interrupt
+        PotiRead = adc_read();                              // read poti
+        PotiRead = map(PotiRead, 0, 4096, 1000, 2000);      // map poit data between 1000 an 2000 
         
-        pwm_set_gpio_level(PWM_PIN, PotiRead);              //setzen der Hightime
+        pwm_set_gpio_level(PWM_PIN, PotiRead);              // regulating the high time --> corresponds to dutycycle between 10-20%
 
     }
 }
 
-//Programm das auf 2ten Core läuft
-//liest die gesendeten Daten des ESC's und gibt diese an den PC per USB aus
+// progrmam running on core1
+// reading data from ESC and returning it to the PC
 void core1_entry() {
     
-    uint8_t buff[READ_LENGTH];      //Inizialisierung von Variablen zum Speichern der ausgelesenen Werte
+    uint8_t buff[READ_LENGTH];      // inizialize of variables to store data read
     uint16_t values[6];
 
-    //warten und check bis UART gestartet ist
+    // watinig until UART is available
     while (uart_is_enabled(UART_ID) == false)
     {
         /* pass */
     }
 
-    //aktiviert den FIFO
+    // activate UART reading FIFO
     uart_set_fifo_enabled(UART_ID, true);  
     
     //Programmschleife die die wiederholt wird bis Programmabruch
     while (1)
     {
-        //Wenn FIFO des UART auslesbar ist wird schleife gestartet
+        //  if FIFO readabel read an return it to the PC
         if(uart_is_readable(UART_ID))
         {   
         
-            //liest den FIFO aus (10 Bytes)
+            // reading the FIFO (10 bytes)
             uart_read_blocking(UART_ID, buff, READ_LENGTH);
-            //deaktiviert FIFO um ihn zu lehren
+            // deactivate UART reading FIFO to clear it
             uart_set_fifo_enabled(UART_ID, false);
              
 
-            //berechnet aus eingelesenen Bytes die pyhsikalischen Werte
+            // calculating the pyhsical data
             calculate_values(&buff, &values);
            
-           //Ausgabe der physikalischen Daten
+           // return of the pyhical data to the PC (via printf)
             printf("%d °C, %.2f V, %.2f A, %d mAh, %.2f Rpm, CRC8: %d", values[0],(float)values[1]/100, (float)values[2]/100, values[3], (float)values[4]*100/12, values[5]);
             if(values[5] != 0)
             {
-                printf(" | Data corrupted: ");              //wenn pyhsikalische Daten unplausibel --> Rohdaten mit ausgegben
+                printf(" | Data corrupted: ");              // if raw data received wrong --> return raw data 
                 for(uint8_t i = 0; i < READ_LENGTH; ++i)
                     printf("%d, ", buff[i]); 
             }
             printf("\n");
             
-            //aktiviert den FIFO
+            // activate UART reading FIFO
             uart_set_fifo_enabled(UART_ID, true);      
         }
     }
         
 }
 
-//erstellen eines PWM Signals
-void set_pwm_pin(uint pin, uint freq, uint duty_c) // duty_c between 0..10000
+// creating PWM signal
+void set_pwm_pin(uint pin, uint freq, uint duty_c) // duty_c between 0..10000us
 { 
-    gpio_set_function(pin, GPIO_FUNC_PWM);                          //setzen des PWM_Pins
-    uint slice_num = pwm_gpio_to_slice_num(pin);                    //siehe SDK Dokumentatins PWM Signal
+    gpio_set_function(pin, GPIO_FUNC_PWM);                          // set PWM PIN --> look up SDK dokumentation
+    uint slice_num = pwm_gpio_to_slice_num(pin);                     
     pwm_config config = pwm_get_default_config();
     float div = (float)clock_get_hz(clk_sys) / (freq * 10000);
     pwm_config_set_clkdiv(&config, div);
     pwm_config_set_wrap(&config, 10000); 
     pwm_init(slice_num, &config, true);                             // start the pwm running according to the config
-    pwm_set_gpio_level(pin, duty_c);                                //connect the pin to the pwm engine and set the on/off level. 
+    pwm_set_gpio_level(pin, duty_c);                                // connect the pin to the pwm engine and set the on/off level. 
 }
 
-//Map nimmt einen Wert in einer Range und findet den dazu passenden Wert in einer neuen Range
+// return read in number between max and min
 long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
     return (x - in_min) * (out_max - out_min)/ (in_max - in_min) + out_min;
 }
 
 
-//Wird über Timer aufgerufen und sendet den Peak Pin an den ESC
+// sending peak when timer called
 bool repeating_timer_callback(struct repeating_timer *t)
 {       
 
-    if(gpio_get(PWM_PIN) == 1)                      //checkt ob PWM Signal gerade in der Hightime ist
+    if(gpio_get(PWM_PIN) == 1)                      // check if PWM signal high
     {
         printf("blocked\n");
         int time = micros();
-        while (micros() <= time + BLOCK_TIME)      //wenn ja wird Peak um die Blockzeit verzögert
+        while (micros() <= time + BLOCK_TIME)      // if true peak gets delayed
         {
             /* pass */
         }
     }
-    sendPeak();                                     //senden des Peaks
+    sendPeak();                                     // sending out peak
     return true; 
 }
 
-//Sendet eine 1 auf dem PEAK_PIN für PEAK_TIME
+// sending high (1) on peak PIN for PEAK_TIME
 void sendPeak(){   
     gpio_put(PEAK_PIN, 1);
     int time = micros();
@@ -178,14 +176,14 @@ void sendPeak(){
     gpio_put(PEAK_PIN, 0);
 }
 
-//berechnet ein Teil des CRC8 Check Systems
+// calculating a part of CRC8 check systems
 uint8_t update_crc8(uint8_t crc, uint8_t crc_seed)
 { 
     uint8_t crc_u, i; crc_u = crc; crc_u ^= crc_seed; 
     for ( i=0; i<8; i++) crc_u = ( crc_u & 0x80 ) ? 0x7 ^ ( crc_u << 1 ) : ( crc_u << 1 ); return (crc_u);
 }
 
-//Gibt eine 0 zurück, falls keine Fehler in dem Datensatz gefunden wurde
+// retunrs 0, if no error in read in data
 uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
 { 
     uint8_t crc = 0, i; 
@@ -193,16 +191,16 @@ uint8_t get_crc8(uint8_t *Buf, uint8_t BufLen)
     return (crc);
 }
 
-//Wandelt die 10 gefundenen Integer in 6 Werte um, die noch skalliert werden müssen
+// converts 10 found Integers to 6 values, still needed to be scaled 
 void calculate_values(uint8_t *buff, uint16_t *values)
 { 
-    //Temperatur wird als erster Wert direkt gespeichert, es wird keine Umrechnung benötigt
+    // temperature saved as first value, no scaling needed
     values[0] = buff[0];
-    //In der For Schleife werden immer zwei Byte zu einer 16 bit Zahl kombiniert und in Values gespeichert
+    //in the loop combining two Byte to one 16 bit nimber
     for (int i = 1; i < 5; i++) {
         values[i] = (buff[(i * 2)-1] << 8 | buff[(i * 2)]); 
         }
-    //CRC8 wird als letzter Wert gespeichert: = heißt erfolgreich
+    //CRC8 return gets saved
     values[5] = get_crc8(buff, READ_LENGTH);    
 }
 
