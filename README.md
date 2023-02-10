@@ -21,7 +21,7 @@ This is a project where the Raspberry Pi Pico is used to read the telemetry data
 
 Translated with www.DeepL.com/Translator (free version)
 
- <p>
+ [**alt txt**](https://github.com/Vektor1horn/Rotor_C/blob/master/images/IMG_20230210_142125.jpg)
  
 German:
 ## Raspberry Pi Pico --> KISS ESC-32bit Ansteuerung/Auslesen (Pico SDK)
