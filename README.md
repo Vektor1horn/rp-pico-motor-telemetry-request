@@ -1,5 +1,5 @@
 English:
-## Raspberry Pi Pico --> KISS ESC-32bit control/readout
+## Raspberry Pi Pico --> KISS ESC-32bit control/readout (Pico SDK)
 
 This is a project where the Raspberry Pi Pico is used to read the telemetry data of the KISS ESC-32bit and output it to a PC.
 
@@ -24,7 +24,7 @@ Translated with www.DeepL.com/Translator (free version)
  <p>
  
 German:
-## Raspberry Pi Pico --> KISS ESC-32bit Ansteuerung/Auslesen
+## Raspberry Pi Pico --> KISS ESC-32bit Ansteuerung/Auslesen (Pico SDK)
 
 Dies ist ein Projekt bei welchem der Raspberry Pi Pico genutzt wird um die Telemtetrie daten des KISS ESC-32bit aus zu lesen unf auf einem PC aus zu geben.
 
