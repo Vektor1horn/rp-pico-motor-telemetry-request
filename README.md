@@ -3,7 +3,7 @@ English:
 
 This is a project where the Raspberry Pi Pico is used to read the telemetry data of the KISS ESC-32bit and output it to a PC.
 
-* The VS code extensions Plaftomr IO and the [**framework**](https://github.com/Wiz-IO/wizio-pico) written for it by Github user : [**Wiz-IO**](https://github.com/Wiz-IO) are used. (when creating a new project and selecting "barematel" as framework, you can program with the official RP Pico C/C++ SDK)
+* The VS code extensions Plaftomr IO and the [**framework**](https://github.com/Wiz-IO/wizio-pico) written for it by Github user : [**Wiz-IO**](https://github.com/Wiz-IO) are used. (when creating a new project and selecting "barematel" as framework, you can program with the official [**RP Pico C/C++ SDK**](https://github.com/raspberrypi/pico-sdk))
 
 * The program generates a PWM singal (100Hz) on PIN 24 which controls the motor speed via the KISS ESC-32bit.
 
@@ -28,7 +28,7 @@ German:
 
 Dies ist ein Projekt bei welchem der Raspberry Pi Pico genutzt wird um die Telemtetrie daten des KISS ESC-32bit aus zu lesen unf auf einem PC aus zu geben.
 
-* Gentutz werden die VS-Code Extentions Plaftomr IO sowie das dazu geschriebene [**Framework**](https://github.com/Wiz-IO/wizio-pico) von Github User : [**Wiz-IO**](https://github.com/Wiz-IO) (beim erzeugen eines neue Projektes und "barematel" als ausgewähltes Framework lässt sich mit der offiziellen RP Pico C/C++ SDK programmieren)
+* Gentutz werden die VS-Code Extentions Plaftomr IO sowie das dazu geschriebene [**Framework**](https://github.com/Wiz-IO/wizio-pico) von Github User : [**Wiz-IO**](https://github.com/Wiz-IO) (beim erzeugen eines neue Projektes und "barematel" als ausgewähltes Framework lässt sich mit der offiziellen [**RP Pico C/C++ SDK**](https://github.com/raspberrypi/pico-sdk) programmieren)
 
 * Das Programm erzeugt ein PWM Singal (100Hz) auf PIN 24 welches die Motorgeschwindikeit über den KISS ESC-32bit steuert.
 * Der Duty Cycle des Programmes kann zwischen 10-20% eingestellt werden. Dazu wird ein Potentionmeter auf PIN 31 eingelesen.
