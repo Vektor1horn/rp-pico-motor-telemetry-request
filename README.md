@@ -3,7 +3,7 @@ English:
 
 This is a project where the Raspberry Pi Pico is used to read the telemetry data of the KISS ESC-32bit and output it to a PC.
 
-* The VS code extensions Plaftomr IO and the [**framework**](https://github.com/Wiz-IO/wizio-pico) written for it by Github user : [**Wiz-IO**](https://github.com/Wiz-IO) are used. (when creating a new project and selecting "barematel" as the selected framework, you can program with the official RP Pico C/C++ SDK)
+* The VS code extensions Plaftomr IO and the [**framework**](https://github.com/Wiz-IO/wizio-pico) written for it by Github user : [**Wiz-IO**](https://github.com/Wiz-IO) are used. (when creating a new project and selecting "barematel" as framework, you can program with the official RP Pico C/C++ SDK)
 
 * The program generates a PWM singal (100Hz) on PIN 24 which controls the motor speed via the KISS ESC-32bit.
 
